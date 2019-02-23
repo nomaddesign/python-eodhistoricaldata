@@ -6,7 +6,7 @@ from ._utils import (_init_session, _format_date,
                      _sanitize_dates, _url, RemoteDataError)
 
 EOD_HISTORICAL_DATA_API_KEY_ENV_VAR = "EOD_HISTORICAL_API_KEY"
-EOD_HISTORICAL_DATA_API_KEY_DEFAULT = "OeAFFmMliFG5orCUuwAKQ8l4WWFQ67YX"
+EOD_HISTORICAL_DATA_API_KEY_DEFAULT = ""
 EOD_HISTORICAL_DATA_API_URL = "https://eodhistoricaldata.com/api"
 
 
@@ -39,7 +39,7 @@ def get_eod_data(symbol, exchange, start=None, end=None,
     r = session.get(url, params=params)
     if r.status_code == requests.codes.ok:
         df = pd.read_csv(StringIO(r.text), skipfooter=1,
-                         parse_dates=[0], index_col=0)
+                         parse_dates=[0], index_col=0, engine='python')
         return df
     else:
         params["api_token"] = "YOUR_HIDDEN_API"
@@ -65,7 +65,7 @@ def get_dividends(symbol, exchange, start=None, end=None,
     r = session.get(url, params=params)
     if r.status_code == requests.codes.ok:
         df = pd.read_csv(StringIO(r.text), skipfooter=1,
-                         parse_dates=[0], index_col=0)
+                         parse_dates=[0], index_col=0, engine='python')
         assert len(df.columns) == 1
         ts = df["Dividends"]
         return ts
@@ -88,8 +88,27 @@ def get_exchange_symbols(exchange_code,
     }
     r = session.get(url, params=params)
     if r.status_code == requests.codes.ok:
-        df = pd.read_csv(StringIO(r.text), skipfooter=1, index_col=0)
+        df = pd.read_csv(StringIO(r.text), skipfooter=1, index_col=0, engine='python')
         return df
+    else:
+        params["api_token"] = "YOUR_HIDDEN_API"
+        raise RemoteDataError(r.status_code, r.reason, _url(url, params))
+
+
+def get_bulk_symbols(exchange_code, date=None, api_key=EOD_HISTORICAL_DATA_API_KEY_DEFAULT, session=None):
+    """http://eodhistoricaldata.com/api/eod-bulk-last-day/US?api_token={YOUR_API_KEY}
+    """
+    session = _init_session(session)
+    endpoint = "/eod-bulk-last-day/{exchange_code}".format(exchange_code=exchange_code)
+    url = EOD_HISTORICAL_DATA_API_URL + endpoint
+    params = {
+        "api_token": api_key,
+        "date": date
+    }
+    r = session.get(url, params=params)
+    if r.status_code == requests.codes.ok:
+       df = pd.read_csv(StringIO(r.text), skipfooter=1, index_col=0, engine='python')
+       return df
     else:
         params["api_token"] = "YOUR_HIDDEN_API"
         raise RemoteDataError(r.status_code, r.reason, _url(url, params))
@@ -340,3 +359,5 @@ def get_indexes():
     df = pd.read_csv(StringIO(data), sep="\t")
     df = df.set_index("ID")
     return(df)
+
+

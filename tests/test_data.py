@@ -3,7 +3,7 @@ from eod_historical_data import (get_api_key,
                                  get_eod_data,
                                  get_dividends,
                                  get_exchange_symbols,
-                                 get_exchanges, get_currencies, get_indexes)
+                                 get_exchanges, get_currencies, get_indexes, get_bulk_symbols)
 import datetime
 import requests_cache
 
